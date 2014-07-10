@@ -251,7 +251,8 @@ module.provider('Restangular', function() {
     };
 
     config.getUrlFromElem = function(elem) {
-      return config.getFieldFromElem(config.restangularFields.selfLink, elem);
+      var selfLink = config.getFieldFromElem(config.restangularFields.selfLink, elem);
+      return (selfLink && config.suffix) ? selfLink.replace(config.suffix, '') : selfLink;
     };
 
     config.useCannonicalId = _.isUndefined(config.useCannonicalId) ? false : config.useCannonicalId;
@@ -636,7 +637,11 @@ module.provider('Restangular', function() {
         var elemSelfLink = __this.config.getUrlFromElem(elem);
         if (elemSelfLink) {
           if (__this.config.isAbsoluteUrl(elemSelfLink)) {
-            return elemSelfLink;
+            return 
+                (__this.config.absoluteUrl) 
+                ?  __this.config.absoluteUrl //add the absolute URL to the start if set
+                + ( elemSelfLink.indexOf("/") === 0 ? elemSelfLink.substring(1) : elemSelfLink) //remove a leading forward slash if set
+                : elemSelfLink;
           } else {
             elemUrl = elemSelfLink;
           }
