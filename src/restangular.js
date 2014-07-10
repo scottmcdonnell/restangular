@@ -637,8 +637,7 @@ module.provider('Restangular', function() {
         var elemSelfLink = __this.config.getUrlFromElem(elem);
         if (elemSelfLink) {
           if (__this.config.isAbsoluteUrl(elemSelfLink)) {
-            return 
-                (__this.config.absoluteUrl) 
+            return (__this.config.absoluteUrl && __this.config.absoluteUrl !== true) 
                 ?  __this.config.absoluteUrl //add the absolute URL to the start if set
                 + ( elemSelfLink.indexOf("/") === 0 ? elemSelfLink.substring(1) : elemSelfLink) //remove a leading forward slash if set
                 : elemSelfLink;
