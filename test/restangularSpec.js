@@ -24,10 +24,18 @@ describe("Restangular", function() {
         {from: "Anonymous", amount: 0.1416, id: 1, _links: {self: "/accountsHAL/paul/transactions/1"}}
       ], _links: {self: "/accountsHAL/paul"}}
     ];
+    
+    accountsModelWithSuffix = [
+      {id: 0, user: "Martin", amount: 42, transaction: [], href: "/accountsSuffix/martin.json"},
+      {id: 1, user: "Paul", amount: 3.1416, transaction: [
+        {from: "Martin", amount: 3, id: 0, href: "/accounts/paul/transactions/0.json"},
+        {from: "Anonymous", amount: 0.1416, id: 1, href: "/accounts/paul/transactions/1.json"}
+      ], href: "/accounts/paul.json"}
+    ];
 
     infoModel = {
       id: 0, text: "Some additional account information"
-    }
+    };
 
     newAccount = {id: 44, user: "First User", amount: 45, transactions: []};
 
@@ -61,6 +69,14 @@ describe("Restangular", function() {
     $httpBackend.whenGET("/accountsHAL").respond(accountsHalModel);
     $httpBackend.whenPUT("/accountsHAL/martin").respond(function(method, url, data) {
       accountsHalModel[0] = angular.fromJson(data);
+      return [200, data, ""];
+    });
+    
+    $httpBackend.whenGET("/accountsSuffix").respond(accountsModelWithSuffix);
+    $httpBackend.whenGET("/accountsSuffix.json").respond(accountsModelWithSuffix);
+    $httpBackend.whenGET("/accountsSuffix/martin.json").respond(accountsModelWithSuffix[0]);
+    $httpBackend.whenPUT("/accountsSuffix/martin/transactions.json").respond(function(method, url, data) {
+      accountsModelWithSuffix[0].transaction = angular.fromJson(data);
       return [200, data, ""];
     });
 
@@ -743,6 +759,37 @@ describe("Restangular", function() {
       account.put();
 
       $httpBackend.flush();
+    });
+  });
+ 
+  describe("Self linking with suffix", function() {
+    it("Should allow for suffix in selfLinks", function() {
+      var linkRestangular = Restangular.withConfig(function(RestangularConfigurer) {
+        RestangularConfigurer.setRequestSuffix('.json');
+      });
+
+      var arr = linkRestangular.all('accountsSuffix').getList().$object;
+      $httpBackend.flush();
+      
+      var account = arr[0];
+      var transactions = account.all('transactions');
+      expect(transactions.getRestangularUrl()).toEqual("/accountsSuffix/martin/transactions");
+    });
+  });
+  
+  describe("Cross-site selfLinks", function() {
+    it("Should add the absolute URL to the self link", function() {
+      var linkRestangular = Restangular.withConfig(function(RestangularConfigurer) {
+          RestangularConfigurer.setRequestSuffix('.json');
+          RestangularConfigurer.setSelfLinkAbsoluteUrl('http://accounts.com/');
+      });
+
+      var arr = linkRestangular.all('accountsSuffix').getList().$object;
+      $httpBackend.flush();
+      
+      var account = arr[0];
+      expect(account.getRestangularUrl()).toEqual("http://accounts.com/accountsSuffix/martin.json");
+      expect(account.all('transactions').getRestangularUrl()).toEqual("http://accounts.com/accountsSuffix/martin/transactions");
     });
   });
 
