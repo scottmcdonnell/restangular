@@ -251,10 +251,9 @@ module.provider('Restangular', function() {
     };
 
     config.getUrlFromElem = function(elem) {
-      var selfLink = config.getFieldFromElem(config.restangularFields.selfLink, elem);
-      return (selfLink && config.suffix) ? selfLink.replace(config.suffix, '') : selfLink;
+      return config.getFieldFromElem(config.restangularFields.selfLink, elem);
     };
-
+    
     config.useCannonicalId = _.isUndefined(config.useCannonicalId) ? false : config.useCannonicalId;
     object.setUseCannonicalId = function(value) {
       config.useCannonicalId = value;
@@ -558,9 +557,9 @@ module.provider('Restangular', function() {
         add += what;
         url += add;
       }
-
       if (this.config.suffix &&
-        url.indexOf(this.config.suffix, url.length - this.config.suffix.length) === -1) {
+        url.indexOf(this.config.suffix, url.length - this.config.suffix.length) === -1 &&
+        !this.config.getUrlFromElem(current)) {
           url += this.config.suffix;
       }
 
@@ -636,10 +635,9 @@ module.provider('Restangular', function() {
         var elemSelfLink = __this.config.getUrlFromElem(elem);
         if (elemSelfLink) {
           if (__this.config.isAbsoluteUrl(elemSelfLink)) {
-            return (__this.config.absoluteUrl && __this.config.absoluteUrl !== true) 
-                ?  __this.config.absoluteUrl //add the absolute URL to the start if set
-                + ( elemSelfLink.indexOf("/") === 0 ? elemSelfLink.substring(1) : elemSelfLink) //remove a leading forward slash if set
-                : elemSelfLink;
+              return (__this.config.absoluteUrl && __this.config.absoluteUrl !== true) 
+                ?  __this.config.absoluteUrl.replace(/\/$/, '') + "/" + elemSelfLink.replace(/^\//, '')   //add the absolute URL to the start if set
+                : elemSelfLink; 
           } else {
             elemUrl = elemSelfLink;
           }
@@ -664,6 +662,8 @@ module.provider('Restangular', function() {
             }
           }
         }
+        //remove any trailing suffix from the url before concatinating new subresources
+        if (__this.config.suffix) acum =  acum.replace(new RegExp(__this.config.suffix + '$'), '');
 
         return acum.replace(/\/$/, '') + '/' + elemUrl;
 
